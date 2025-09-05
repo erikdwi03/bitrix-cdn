@@ -4,6 +4,12 @@
 
 ## Частые проблемы и решения
 
+### ⚠️ ВАЖНО: Двустороннее монтирование
+
+1. **CDN → Битрикс**: монтирует `/upload/` для чтения (READ-ONLY)
+2. **Битрикс → CDN**: монтирует `/resize_cache/` для записи
+3. **Проблемы могут быть с обоих сторон!**
+
 ### 1. SSHFS Mount проблемы
 
 #### Проблема: Mount point не работает
@@ -272,7 +278,44 @@ journalctl -u nginx -f
 tail -f /var/log/syslog | grep -E "sshfs|nginx|webp"
 ```
 
-### 9. Команды для диагностики
+### 9. Проблемы с resize_cache
+
+#### Проблема: Битрикс не может создать превью
+
+**Симптомы:**
+- CFile::ResizeImageGet возвращает false
+- В логах ошибки записи в resize_cache
+
+**Решение:**
+```bash
+# На Битрикс сервере проверить монтирование:
+mountpoint /var/www/bitrix/upload/resize_cache
+# Если не примонтирован:
+mount /var/www/bitrix/upload/resize_cache
+
+# Проверить права записи:
+touch /var/www/bitrix/upload/resize_cache/test.txt
+rm /var/www/bitrix/upload/resize_cache/test.txt
+
+# Проверить SSH подключение к CDN:
+ssh cdn@cdn.termokit.ru
+```
+
+#### Проблема: WebP не создается для resize_cache
+
+**Решение:**
+```bash
+# На CDN сервере проверить File Watcher:
+ps aux | grep "python.*converter"
+
+# Проверить логи конвертера:
+tail -f /logs/converter/converter.log
+
+# Проверить директорию resize_cache:
+ls -la /var/www/cdn/upload/resize_cache/
+```
+
+### 10. Команды для диагностики
 
 ```bash
 # Проверка всех сервисов

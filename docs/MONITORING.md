@@ -54,6 +54,12 @@ cache_files_total
 webp_conversion_duration_seconds
 webp_conversion_errors_total
 
+# Resize cache metrics (новые!)
+resize_cache_size_bytes
+resize_cache_files_total
+resize_cache_webp_conversions_total
+bitrix_mount_status
+
 # System metrics
 node_cpu_usage_percent
 node_memory_usage_bytes
@@ -201,9 +207,10 @@ grep "Converted" /logs/converter/converter.log | grep "$(date -d '1 hour ago' '+
 
 ### Компоненты проверки
 
-1. **SSHFS Mount**
-   - Проверка доступности mount point
-   - Тест чтения файла
+1. **SSHFS Mount (двусторонний!)**
+   - Проверка mount /mnt/bitrix (чтение оригиналов)
+   - Проверка mount Битрикс → CDN (resize_cache)
+   - Тест записи в resize_cache
    - Auto-remount при сбое
 
 2. **NGINX**

@@ -266,6 +266,11 @@ class ConversionRequestHandler(BaseHTTPRequestHandler):
             elif parsed.path == '/metrics':
                 self.send_metrics_response()
                 return
+            elif parsed.path.startswith('/convert-resize'):
+                # Обработка resize_cache изображений
+                image_path = parsed.path.replace('/convert-resize', '')
+                self.handle_resize_conversion(image_path)
+                return
             elif parsed.path.startswith('/convert'):
                 # Получаем путь к файлу из URL
                 image_path = parsed.path.replace('/convert', '')
@@ -342,6 +347,42 @@ class ConversionRequestHandler(BaseHTTPRequestHandler):
         self.send_response(302)
         self.send_header('Location', f'/mnt/bitrix{image_path}')
         self.end_headers()
+    
+    def handle_resize_conversion(self, image_path: str):
+        """Handle resize_cache image conversion"""
+        try:
+            # resize_cache хранится локально
+            source_path = Path('/var/www/cdn/upload/resize_cache') / image_path.lstrip('/upload/resize_cache/')
+            
+            if not source_path.exists():
+                self.send_error(404, "Resize cache image not found")
+                return
+            
+            # Проверяем Accept header для WebP
+            accept_header = self.headers.get('Accept', '')
+            if 'image/webp' not in accept_header:
+                # Браузер не поддерживает WebP
+                self.serve_original_file(source_path)
+                return
+            
+            # Путь для WebP версии
+            webp_path = source_path.with_suffix(source_path.suffix + '.webp')
+            
+            # Конвертируем если нужно
+            if not webp_path.exists() or source_path.stat().st_mtime > webp_path.stat().st_mtime:
+                # Конвертируем в WebP
+                converted = self.converter.convert_image(source_path)
+                if converted:
+                    webp_path = converted
+            
+            if webp_path and webp_path.exists():
+                self.serve_webp_file(webp_path)
+            else:
+                self.serve_original_file(source_path)
+                
+        except Exception as e:
+            logger.error(f"Resize conversion error: {e}")
+            self.send_error(500, "Conversion failed")
     
     def send_health_response(self):
         """Health check response"""

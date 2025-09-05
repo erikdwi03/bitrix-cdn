@@ -8,7 +8,7 @@
 graph TB
     subgraph "🌐 EXTERNAL"
         USER[👤 Пользователи<br/>cdn.termokit.ru]
-        BITRIX[🖥️ Битрикс Сервер<br/>192.168.1.10<br/>SSH:22]
+        BITRIX[🖥️ Битрикс Сервер<br/>192.168.1.10<br/>SSH:22<br/>resize_cache mounted from CDN]
         DNS[🌍 DNS<br/>cdn.termokit.ru → IP]
         LETSENCRYPT[🔐 Let's Encrypt<br/>SSL Certs]
     end
@@ -44,6 +44,7 @@ graph TB
         
         subgraph "💽 Docker Volumes"
             VOL_BITRIX[📁 bitrix-files<br/>SSHFS Mount Point<br/>/mnt/bitrix]
+            VOL_RESIZE[📂 resize-cache<br/>Resize Cache Storage<br/>/var/www/cdn/upload/resize_cache]
             VOL_WEBP[🎨 webp-cache<br/>WebP Cache<br/>/var/cache/webp]
             VOL_REDIS[🔴 redis-data<br/>Redis Persistence<br/>/data]
             VOL_PROMETHEUS[📈 prometheus-data<br/>Metrics Storage<br/>/prometheus]
@@ -61,7 +62,8 @@ graph TB
     USER -->|HTTPS:443| NGINX
     DNS --> USER
     LETSENCRYPT --> CERTBOT
-    BITRIX <-->|SSH:22| SSHFS
+    BITRIX -->|SSH:22 READ| SSHFS
+    VOL_RESIZE <-->|SSH:22 WRITE| BITRIX
     
     %% Internal connections
     NGINX --> VARNISH
@@ -85,6 +87,8 @@ graph TB
     %% Volume connections
     NGINX -.-> VOL_BITRIX
     CONVERTER -.-> VOL_BITRIX
+    NGINX -.-> VOL_RESIZE
+    CONVERTER -.-> VOL_RESIZE
     REDIS -.-> VOL_REDIS
     PROMETHEUS -.-> VOL_PROMETHEUS
     GRAFANA -.-> VOL_GRAFANA

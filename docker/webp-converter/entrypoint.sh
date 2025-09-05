@@ -25,5 +25,9 @@ fi
 mkdir -p "$CACHE_DIR"
 echo "Cache directory: $CACHE_DIR"
 
+# Create resize_cache directory for local storage
+mkdir -p "/var/www/cdn/upload/resize_cache"
+echo "Resize cache directory: /var/www/cdn/upload/resize_cache"
+
 # Start converter
 exec python3 /app/converter.py

@@ -317,6 +317,73 @@ return [
 ];
 ```
 
+## Вариант 3: Настройка обратного монтирования для resize_cache
+
+### На CDN сервере (Server 2) - создание SSH доступа для Битрикс:
+```bash
+# Создание пользователя для Битрикс сервера
+adduser --system --group bitrix-mount
+mkdir -p /home/bitrix-mount/.ssh
+
+# Генерация SSH ключей для обратного доступа
+ssh-keygen -t rsa -b 4096 -f /root/.ssh/bitrix_reverse -N ""
+
+# Добавление публичного ключа Битрикс сервера
+echo "SSH_PUBLIC_KEY_FROM_BITRIX" >> /home/bitrix-mount/.ssh/authorized_keys
+chmod 600 /home/bitrix-mount/.ssh/authorized_keys
+chown -R bitrix-mount:bitrix-mount /home/bitrix-mount/.ssh
+
+# Настройка прав на resize_cache директорию
+mkdir -p /var/www/cdn/upload/resize_cache
+chown bitrix-mount:www-data /var/www/cdn/upload/resize_cache
+chmod 775 /var/www/cdn/upload/resize_cache
+```
+
+### На Битрикс сервере (Server 1) - монтирование resize_cache с CDN:
+```bash
+# Установка SSHFS если еще не установлен
+apt install sshfs
+
+# Генерация SSH ключей
+ssh-keygen -t rsa -b 4096 -f /root/.ssh/cdn_resize_mount -N ""
+
+# Копирование публичного ключа на CDN сервер
+ssh-copy-id -i /root/.ssh/cdn_resize_mount.pub bitrix-mount@cdn.termokit.ru
+
+# Создание точки монтирования
+mkdir -p /var/www/bitrix/upload/resize_cache
+
+# Тестовое монтирование
+sshfs -o allow_other,default_permissions,IdentityFile=/root/.ssh/cdn_resize_mount \
+  bitrix-mount@cdn.termokit.ru:/var/www/cdn/upload/resize_cache \
+  /var/www/bitrix/upload/resize_cache
+
+# Создание systemd сервиса для автомонтирования
+cat > /etc/systemd/system/cdn-resize-mount.service << 'EOF'
+[Unit]
+Description=Mount CDN resize_cache via SSHFS
+After=network.target
+
+[Service]
+Type=forking
+RemainAfterExit=yes
+ExecStart=/usr/bin/sshfs -o allow_other,default_permissions,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,IdentityFile=/root/.ssh/cdn_resize_mount bitrix-mount@cdn.termokit.ru:/var/www/cdn/upload/resize_cache /var/www/bitrix/upload/resize_cache
+ExecStop=/bin/umount /var/www/bitrix/upload/resize_cache
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Активация сервиса
+systemctl daemon-reload
+systemctl enable cdn-resize-mount
+systemctl start cdn-resize-mount
+
+# Проверка монтирования
+mountpoint /var/www/bitrix/upload/resize_cache && echo "✅ Mounted successfully"
+```
+
 ---
 
 # ✅ ТЕСТИРОВАНИЕ И ПРОВЕРКА

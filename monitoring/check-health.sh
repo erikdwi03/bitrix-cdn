@@ -5,8 +5,9 @@
 # Company: AAChibilyaev LTD
 
 # Конфигурация
-MOUNT_POINT="/mnt/bitrix"
-CACHE_DIR="/var/cache/webp"
+MOUNT_POINT="/mnt/bitrix"                      # Примонтированные оригиналы
+RESIZE_CACHE_DIR="/var/www/cdn/upload/resize_cache"  # Локальный resize_cache
+CACHE_DIR="/var/cache/webp"                    # WebP кеш
 ALERT_EMAIL="info@aachibilyaev.com"
 LOG_FILE="/var/log/cdn/health.log"
 NGINX_STATUS_URL="http://127.0.0.1/nginx_status"
@@ -272,6 +273,25 @@ show_cache_stats() {
         fi
     else
         echo "  Cache directory not found"
+    fi
+    
+    # Статистика resize_cache
+    echo -e "${YELLOW}Resize cache statistics:${NC}"
+    if [ -d "$RESIZE_CACHE_DIR" ]; then
+        local resize_files=$(find "$RESIZE_CACHE_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) 2>/dev/null | wc -l)
+        local resize_size=$(du -sh "$RESIZE_CACHE_DIR" 2>/dev/null | cut -f1)
+        local resize_webp=$(find "$CACHE_DIR/upload/resize_cache" -type f -name "*.webp" 2>/dev/null | wc -l)
+        
+        echo "  Resize cache images: $resize_files"
+        echo "  Resize cache size: $resize_size"
+        echo "  Resize WebP converted: $resize_webp"
+        
+        if [ "$resize_files" -gt 0 ]; then
+            local percent=$((resize_webp * 100 / resize_files))
+            echo "  Conversion coverage: ${percent}%"
+        fi
+    else
+        echo "  Resize cache directory not found"
     fi
 }
 

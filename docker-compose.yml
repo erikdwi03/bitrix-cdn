@@ -36,6 +36,9 @@ services:
       # Примонтированные файлы Битрикс (read-only)
       - bitrix-files:/mnt/bitrix:ro
       
+      # resize_cache - хранится локально на CDN
+      - resize-cache:/var/www/cdn/upload/resize_cache
+      
       # Кеш WebP файлов
       - webp-cache:/var/cache/webp
       
@@ -62,6 +65,9 @@ services:
     volumes:
       # Доступ к оригинальным файлам
       - bitrix-files:/mnt/bitrix:ro
+      
+      # resize_cache directory
+      - resize-cache:/var/www/cdn/upload/resize_cache
       
       # Кеш WebP
       - webp-cache:/var/cache/webp
@@ -279,6 +285,10 @@ services:
 volumes:
   # Примонтированные файлы Битрикс (монтируется через SSHFS контейнер)
   bitrix-files:
+    driver: local
+  
+  # resize_cache - хранится локально, монтируется на Битрикс сервер
+  resize-cache:
     driver: local
   
   # Кеш WebP файлов

@@ -15,6 +15,7 @@ graph TB
     subgraph "⚡ CDN Server (Server 2) - Docker Host"
         subgraph "🐳 Docker Volumes"
             VOL_BITRIX[📦 bitrix-files<br/>Type: local<br/>Mount: /mnt/bitrix<br/>Mode: READ-ONLY]
+            VOL_RESIZE[📦 resize-cache<br/>Type: local<br/>Mount: /var/www/cdn/upload/resize_cache<br/>Mode: READ-WRITE]
             VOL_WEBP[📦 webp-cache<br/>Type: local<br/>Mount: /var/cache/webp<br/>Mode: READ-WRITE]
             VOL_REDIS[📦 redis-data<br/>Type: local<br/>Mount: /data<br/>Mode: READ-WRITE]
             VOL_PROMETHEUS[📦 prometheus-data<br/>Type: local<br/>Mount: /prometheus<br/>Mode: READ-WRITE]
@@ -29,9 +30,9 @@ graph TB
         end
         
         subgraph "🐳 Container Mount Points"
-            C_NGINX[🌐 nginx container<br/>/etc/nginx/ ← configs<br/>/var/log/nginx/ ← logs<br/>/mnt/bitrix/ ← bitrix-files<br/>/var/cache/webp/ ← webp-cache]
+            C_NGINX[🌐 nginx container<br/>/etc/nginx/ ← configs<br/>/var/log/nginx/ ← logs<br/>/mnt/bitrix/ ← bitrix-files<br/>/var/www/cdn/upload/resize_cache/ ← resize-cache<br/>/var/cache/webp/ ← webp-cache]
             
-            C_CONVERTER[🎨 webp-converter<br/>/mnt/bitrix/ ← bitrix-files (ro)<br/>/var/cache/webp/ ← webp-cache<br/>/var/log/converter/ ← logs]
+            C_CONVERTER[🎨 webp-converter<br/>/mnt/bitrix/ ← bitrix-files (ro)<br/>/var/www/cdn/upload/resize_cache/ ← resize-cache<br/>/var/cache/webp/ ← webp-cache<br/>/var/log/converter/ ← logs]
             
             C_SSHFS[📂 sshfs container<br/>/mnt/bitrix/ ← shared volume<br/>/root/.ssh/ ← ssh keys<br/>/var/log/sshfs/ ← logs]
             
@@ -50,6 +51,8 @@ graph TB
     VOL_BITRIX --> C_NGINX
     VOL_BITRIX --> C_CONVERTER
     VOL_BITRIX --> C_SSHFS
+    VOL_RESIZE --> C_NGINX
+    VOL_RESIZE --> C_CONVERTER
     VOL_WEBP --> C_NGINX
     VOL_WEBP --> C_CONVERTER
     VOL_REDIS --> C_REDIS

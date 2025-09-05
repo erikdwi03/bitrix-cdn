@@ -52,16 +52,37 @@ function ReplaceCDNImages(&$content) {
 }
 ```
 
-### Шаг 2: SSH ключи
+### Шаг 2: Настройка двустороннего SSHFS монтирования
+
+#### 2.1. SSH ключи для чтения оригиналов (CDN → Битрикс)
 
 ```bash
-# На CDN сервере
+# На CDN сервере - генерация ключа
 cat /docker/ssh/bitrix_mount.pub
 
-# На Битрикс сервере
+# На Битрикс сервере - добавление ключа
 echo "SSH_PUBLIC_KEY_HERE" >> /home/www-data/.ssh/authorized_keys
 chmod 600 /home/www-data/.ssh/authorized_keys
 ```
+
+#### 2.2. Монтирование resize_cache (Битрикс → CDN)
+
+```bash
+# На CDN сервере - генерация ключа для Битрикс сервера
+ssh-keygen -t rsa -b 4096 -f /root/.ssh/cdn_mount -N ""
+
+# На Битрикс сервере - установка монтирования
+wget https://cdn.termokit.ru/scripts/setup-bitrix-mount.sh
+chmod +x setup-bitrix-mount.sh
+./setup-bitrix-mount.sh
+
+# Или ручная настройка:
+sshfs -o allow_other,default_permissions \
+    cdn@cdn.termokit.ru:/var/www/cdn/upload/resize_cache \
+    /var/www/bitrix/upload/resize_cache
+```
+
+**ВАЖНО**: resize_cache физически хранится на CDN сервере, Битрикс только записывает туда через SSHFS!
 
 ## 📦 Детальная конфигурация
 

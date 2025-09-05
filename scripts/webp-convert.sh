@@ -5,8 +5,9 @@
 # Company: AAChibilyaev LTD
 
 # Конфигурация
-MOUNT_DIR="/mnt/bitrix"
-CACHE_DIR="/var/cache/webp"
+MOUNT_DIR="/mnt/bitrix"                    # Примонтированные оригиналы с Битрикс
+RESIZE_CACHE_DIR="/var/www/cdn/upload/resize_cache"  # Локальный resize_cache от Битрикс
+CACHE_DIR="/var/cache/webp"                # WebP версии
 LOG_FILE="/var/log/cdn/convert.log"
 QUALITY=85
 MAX_WIDTH=2048
@@ -31,9 +32,25 @@ get_mime_type() {
 # ИСПРАВЛЕНО: Конвертация одного файла  
 convert_to_webp() {
     local source_file="$1"
-    local relative_path="${source_file#$MOUNT_DIR}"
-    local cache_file="$CACHE_DIR${relative_path}.webp"
-    local cache_dir="$(dirname "$cache_file")"
+    local relative_path=""
+    local cache_file=""
+    local cache_dir=""
+    
+    # Определяем тип источника (resize_cache или обычный upload)
+    if [[ "$source_file" == "$RESIZE_CACHE_DIR"* ]]; then
+        # Это resize_cache файл (локальный на CDN)
+        relative_path="/upload/resize_cache${source_file#$RESIZE_CACHE_DIR}"
+        cache_file="$CACHE_DIR${relative_path}.webp"
+    elif [[ "$source_file" == "$MOUNT_DIR"* ]]; then
+        # Это оригинал из примонтированной папки
+        relative_path="${source_file#$MOUNT_DIR}"
+        cache_file="$CACHE_DIR${relative_path}.webp"
+    else
+        log_message "ERROR: Unknown file path: $source_file"
+        return 1
+    fi
+    
+    cache_dir="$(dirname "$cache_file")"
     
     # Проверяем существование исходного файла
     if [ ! -f "$source_file" ]; then
@@ -132,6 +149,32 @@ convert_directory() {
     done
     
     log_message "Batch conversion completed. Processed $count files"
+}
+
+# Конвертация resize_cache директории
+convert_resize_cache() {
+    local count=0
+    
+    log_message "Starting resize_cache conversion..."
+    
+    # Проверяем существование локального resize_cache
+    if [ ! -d "$RESIZE_CACHE_DIR" ]; then
+        log_message "WARNING: resize_cache directory not found: $RESIZE_CACHE_DIR"
+        return 1
+    fi
+    
+    # Находим все изображения в resize_cache
+    find "$RESIZE_CACHE_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" \) | while read -r file; do
+        convert_to_webp "$file"
+        count=$((count + 1))
+        
+        # Пауза каждые 10 файлов
+        if [ $((count % 10)) -eq 0 ]; then
+            sleep 0.1
+        fi
+    done
+    
+    log_message "Resize cache conversion completed. Processed $count files"
 }
 
 # Очистка старых файлов из кеша
@@ -233,6 +276,12 @@ case "${1:-convert}" in
         fi
         ;;
     
+    resize-cache)
+        # Конвертация файлов из resize_cache
+        create_dirs
+        convert_resize_cache
+        ;;
+    
     cleanup)
         # Очистка старых файлов
         create_dirs
@@ -251,11 +300,12 @@ case "${1:-convert}" in
         ;;
     
     *)
-        echo "Usage: $0 {convert|batch|cleanup|sync|stats} [args]"
+        echo "Usage: $0 {convert|batch|resize-cache|cleanup|sync|stats} [args]"
         echo ""
         echo "Commands:"
         echo "  convert <file>  - Convert single image to WebP"
         echo "  batch [dir]     - Batch convert directory (default: $MOUNT_DIR)"
+        echo "  resize-cache    - Convert images from resize_cache directory"
         echo "  cleanup [days]  - Remove cache files older than N days (default: 30)"
         echo "  sync            - Remove WebP files for deleted originals"
         echo "  stats           - Show cache statistics"

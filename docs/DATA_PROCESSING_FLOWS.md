@@ -9,7 +9,7 @@ flowchart TD
     subgraph "🖥️ Bitrix Server (Source)"
         USER_UPLOAD[👤 User Upload<br/>Admin panel<br/>Multiple formats<br/>Various sizes]
         
-        BITRIX_STORAGE[📁 Bitrix Storage<br/>/var/www/bitrix/upload/<br/>├── iblock/<br/>├── resize_cache/<br/>├── medialibrary/<br/>└── product_images/]
+        BITRIX_STORAGE[📁 Bitrix Storage<br/>/var/www/bitrix/upload/<br/>├── iblock/ (локально)<br/>├── resize_cache/ (mount с CDN)<br/>├── medialibrary/<br/>└── product_images/]
         
         FILE_VALIDATION[✅ File Validation<br/>Format check<br/>Size limits<br/>Security scan]
     end
@@ -283,6 +283,35 @@ graph TB
     style STAGE_3 fill:#ff9800
     style HOT_CACHE fill:#f44336
     style PERFORMANCE_TRACKER fill:#9c27b0
+```
+
+## 🔄 Resize Cache Processing Flow
+
+```mermaid
+flowchart LR
+    subgraph "🖥️ Server 1 - Bitrix"
+        ORIG[Original Image<br/>/upload/iblock/]
+        PHP[PHP Processing]
+        RESIZE_GEN[Resize Generation<br/>CFile::ResizeImageGet]
+        MOUNT_POINT[/upload/resize_cache/<br/>SSHFS Mount Point]
+    end
+    
+    subgraph "⚡ Server 2 - CDN"
+        LOCAL_RESIZE[/var/www/cdn/upload/resize_cache/<br/>Local Storage]
+        WEBP_CONV[WebP Converter<br/>Creates .webp versions]
+        WEBP_CACHE[/var/cache/webp/upload/resize_cache/]
+    end
+    
+    ORIG --> PHP
+    PHP --> RESIZE_GEN
+    RESIZE_GEN -->|Writes via SSHFS| MOUNT_POINT
+    MOUNT_POINT -.->|Physical Storage| LOCAL_RESIZE
+    LOCAL_RESIZE --> WEBP_CONV
+    WEBP_CONV --> WEBP_CACHE
+    
+    style RESIZE_GEN fill:#ff9800
+    style LOCAL_RESIZE fill:#4caf50
+    style WEBP_CONV fill:#2196f3
 ```
 
 ## 🔀 Data Transformation Workflow
